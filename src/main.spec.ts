@@ -22,6 +22,7 @@ test(
       {
         id: 1,
         author: "pg",
+        children: [15, 234509, 487171, 82729],
         dead: false,
         deleted: false,
         score: 57,
@@ -33,6 +34,7 @@ test(
       {
         id: 2,
         author: "phyllis",
+        children: [],
         dead: false,
         deleted: false,
         score: 16,
@@ -44,6 +46,7 @@ test(
       {
         id: 3,
         author: "phyllis",
+        children: [531602],
         dead: false,
         deleted: false,
         score: 7,
@@ -55,6 +58,7 @@ test(
       {
         id: 4,
         author: "onebeerdave",
+        children: [],
         dead: false,
         deleted: false,
         score: 5,
@@ -66,6 +70,7 @@ test(
       {
         id: 5,
         author: "perler",
+        children: [],
         dead: false,
         deleted: false,
         score: 7,
@@ -78,6 +83,7 @@ test(
       {
         id: 6,
         author: "perler",
+        children: [],
         dead: false,
         deleted: false,
         score: 4,
@@ -90,6 +96,7 @@ test(
       {
         id: 7,
         author: "phyllis",
+        children: [],
         dead: false,
         deleted: false,
         score: 5,
@@ -101,6 +108,7 @@ test(
       {
         id: 8,
         author: "frobnicate",
+        children: [],
         dead: false,
         deleted: false,
         score: 10,
@@ -112,6 +120,7 @@ test(
       {
         id: 9,
         author: "askjigga",
+        children: [],
         dead: false,
         deleted: false,
         score: 4,
@@ -123,6 +132,7 @@ test(
       {
         id: 10,
         author: "frobnicate",
+        children: [],
         dead: false,
         deleted: false,
         score: 3,
@@ -134,6 +144,7 @@ test(
       {
         id: 11,
         author: "frobnicate",
+        children: [],
         dead: false,
         deleted: false,
         score: 5,
@@ -146,6 +157,7 @@ test(
       {
         id: 12,
         author: "farmer",
+        children: [],
         dead: false,
         deleted: false,
         score: 5,
@@ -157,6 +169,7 @@ test(
       {
         id: 13,
         author: "phyllis",
+        children: [],
         dead: false,
         deleted: false,
         score: 5,
@@ -168,6 +181,7 @@ test(
       {
         id: 14,
         author: "pg",
+        children: [],
         dead: false,
         deleted: false,
         score: 4,
@@ -180,6 +194,7 @@ test(
       {
         id: 16,
         author: "pg",
+        children: [],
         dead: false,
         deleted: false,
         score: 11,
@@ -191,6 +206,7 @@ test(
       {
         id: 18,
         author: "farmer",
+        children: [],
         dead: false,
         deleted: false,
         score: 3,
@@ -202,6 +218,7 @@ test(
       {
         id: 19,
         author: "pg",
+        children: [],
         dead: false,
         deleted: false,
         score: 2,
@@ -213,6 +230,7 @@ test(
       {
         id: 20,
         author: "pg",
+        children: [23],
         dead: false,
         deleted: false,
         score: 8,
@@ -226,6 +244,7 @@ test(
       {
         id: 15,
         author: "sama",
+        children: [17],
         dead: false,
         deleted: false,
         parent: 1,
@@ -237,6 +256,7 @@ test(
       {
         id: 17,
         author: "pg",
+        children: [1079],
         dead: false,
         deleted: false,
         parent: 15,

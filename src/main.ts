@@ -49,6 +49,7 @@ export type Post = {
   timestamp: Date | undefined;
   titleHtml: string;
   url: string | undefined;
+  children: number[];
 };
 
 export type Comment = {
@@ -60,6 +61,7 @@ export type Comment = {
   score: number;
   textHtml: string;
   timestamp: Date | undefined;
+  children: number[];
 };
 
 type EarlyStopState = {
@@ -127,6 +129,7 @@ export const fetchHnItem = async (
     const post: Post = {
       id,
       author: item.by,
+      children: item.kids ?? [],
       dead: item.dead ?? false,
       deleted: item.deleted ?? false,
       score: item.score ?? 0,
@@ -140,6 +143,7 @@ export const fetchHnItem = async (
     const comment: Comment = {
       id,
       author: item.by,
+      children: item.kids ?? [],
       dead: item.dead ?? false,
       deleted: item.deleted ?? false,
       parent: assertExists(item.parent),
