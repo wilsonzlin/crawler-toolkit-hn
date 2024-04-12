@@ -6,23 +6,23 @@ import {
   VOptional,
   VString,
   VStruct,
+  VUnixSecTimestamp,
+  Valid,
 } from "@wzlin/valid";
 import assertExists from "@xtjs/lib/js/assertExists";
 import asyncTimeout from "@xtjs/lib/js/asyncTimeout";
-import mapExists from "@xtjs/lib/js/mapExists";
 import raceAsyncIterables from "@xtjs/lib/js/raceAsyncIterables";
 import { randomInt } from "node:crypto";
 
 // Some items are literally null e.g. https://hacker-news.firebaseio.com/v0/item/0.json.
 // Some items basically omit all properties e.g. https://hacker-news.firebaseio.com/v0/item/78692.json.
-const vItem = new VOptional(
+export const vItem = new VOptional(
   new VStruct({
     id: new VInteger(),
     deleted: new VOptional(new VBoolean()),
     type: new VMember(["job", "story", "comment", "poll", "pollopt"] as const),
     by: new VOptional(new VString()),
-    // This is represented as a UNIX timestamp in seconds since epoch.
-    time: new VOptional(new VInteger()),
+    time: new VOptional(new VUnixSecTimestamp()),
     // HTML.
     text: new VOptional(new VString()),
     dead: new VOptional(new VBoolean()),
@@ -38,6 +38,7 @@ const vItem = new VOptional(
     descendants: new VOptional(new VInteger(-1)),
   }),
 );
+export type Item = Valid<typeof vItem>;
 
 export type Post = {
   id: number;
@@ -62,6 +63,44 @@ export type Comment = {
   textHtml: string;
   timestamp: Date | undefined;
   children: number[];
+};
+
+export const itemToPostOrComment = (
+  item: Item,
+): {
+  comment?: Comment;
+  post?: Post;
+} => {
+  if (item?.type === "story") {
+    const post: Post = {
+      id: item.id,
+      author: item.by,
+      children: item.kids ?? [],
+      dead: item.dead ?? false,
+      deleted: item.deleted ?? false,
+      score: item.score ?? 0,
+      textHtml: item.text ?? "",
+      timestamp: item.time,
+      titleHtml: item.title ?? "",
+      url: item.url,
+    };
+    return { post };
+  } else if (item?.type === "comment") {
+    const comment: Comment = {
+      id: item.id,
+      author: item.by,
+      children: item.kids ?? [],
+      dead: item.dead ?? false,
+      deleted: item.deleted ?? false,
+      parent: assertExists(item.parent),
+      score: item.score ?? 0,
+      textHtml: item.text ?? "",
+      timestamp: item.time,
+    };
+    return { comment };
+  } else {
+    return {};
+  }
 };
 
 type EarlyStopState = {
@@ -94,11 +133,8 @@ export const fetchHnItem = async (
   }: {
     timeoutMs?: number;
     onRetry?: (err: Error, attempt: number) => void;
-  },
-): Promise<{
-  post?: Post;
-  comment?: Comment;
-}> => {
+  } = {},
+) => {
   let raw;
   for (let attempt = 1; ; attempt++) {
     const ctl = new AbortController();
@@ -124,37 +160,7 @@ export const fetchHnItem = async (
       await asyncTimeout(randomInt(1000 * (1 << attempt)));
     }
   }
-  const item = vItem.parseRoot(raw);
-  if (item?.type === "story") {
-    const post: Post = {
-      id,
-      author: item.by,
-      children: item.kids ?? [],
-      dead: item.dead ?? false,
-      deleted: item.deleted ?? false,
-      score: item.score ?? 0,
-      textHtml: item.text ?? "",
-      timestamp: mapExists(item.time, (ts) => new Date(ts * 1000)),
-      titleHtml: item.title ?? "",
-      url: item.url,
-    };
-    return { post };
-  } else if (item?.type === "comment") {
-    const comment: Comment = {
-      id,
-      author: item.by,
-      children: item.kids ?? [],
-      dead: item.dead ?? false,
-      deleted: item.deleted ?? false,
-      parent: assertExists(item.parent),
-      score: item.score ?? 0,
-      textHtml: item.text ?? "",
-      timestamp: mapExists(item.time, (ts) => new Date(ts * 1000)),
-    };
-    return { comment };
-  } else {
-    return {};
-  }
+  return vItem.parseRoot(raw);
 };
 
 async function* innerWorker({
@@ -179,11 +185,11 @@ async function* innerWorker({
     ) {
       break;
     }
-    const { post, comment } = await fetchHnItem(id, {
+    const item = await fetchHnItem(id, {
       onRetry: onItemFetchRetry,
       timeoutMs: fetchItemTimeoutMs,
     });
-    const ts = post?.timestamp ?? comment?.timestamp;
+    const ts = item?.time;
     if (
       ts &&
       stopOnItemWithinDurationMs != undefined &&
@@ -201,7 +207,8 @@ async function* innerWorker({
       // Do not submit.
       continue;
     }
-    yield { id, post, comment };
+    // Yield ID as item may be undefined.
+    yield [id, item] as const;
   }
 }
 
@@ -232,13 +239,7 @@ export async function* crawlHn({
   fetchItemTimeoutMs?: number;
 }) {
   // We must submit nulls (i.e. IDs of items with no value) and cannot simply use a separate counter as we only know if it's null after a fetch and that's asynchronous and IDs could get reordered. (The point of this is to ensure that the next ID state in database is persisted without skipping.)
-  const completed = new Map<
-    number,
-    {
-      post?: Post;
-      comment?: Comment;
-    }
-  >();
+  const completed = new Map<number, Item | undefined>();
   let nextIdToYield = nextId;
 
   const maxId = forceMaxId ?? (await fetchHnMaxId());
@@ -247,7 +248,7 @@ export async function* crawlHn({
     id: undefined,
     ts: undefined,
   };
-  for await (const { id, post, comment } of raceAsyncIterables(
+  for await (const [id, item] of raceAsyncIterables(
     ...Array.from({ length: concurrency }, () =>
       innerWorker({
         earlyStopState,
@@ -258,18 +259,18 @@ export async function* crawlHn({
       }),
     ),
   )) {
-    completed.set(id, { post, comment });
+    completed.set(id, item);
+    // WARNING: We must use has() as values could be undefined which is falsy.
     while (completed.has(nextIdToYield)) {
-      let c;
-      while ((c = completed.get(nextIdToYield))) {
-        completed.delete(nextIdToYield);
-        yield {
-          // This must always be provided, because both `post` and `comment` could be undefined.
-          newNextId: ++nextIdToYield,
-          post: c.post,
-          comment: c.comment,
-        };
-      }
+      const c = completed.get(nextIdToYield);
+      const id = nextIdToYield;
+      completed.delete(nextIdToYield);
+      nextIdToYield++;
+      yield {
+        // This must always be provided, because `item` could be undefined.
+        id,
+        item: c,
+      };
     }
   }
   return earlyStopState;

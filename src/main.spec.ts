@@ -1,6 +1,6 @@
 import mapExists from "@xtjs/lib/js/mapExists";
 import { DateTime, FixedOffsetZone } from "luxon";
-import { Comment, Post, crawlHn } from "./main";
+import { Comment, Post, crawlHn, itemToPostOrComment } from "./main";
 
 test(
   "crawlHn",
@@ -11,10 +11,11 @@ test(
       { year: 2006, month: 10, day: 10 },
       { zone: FixedOffsetZone.utcInstance },
     );
-    for await (const { comment, post } of crawlHn({
+    for await (const { item } of crawlHn({
       nextId: 0,
       stopOnItemWithinDurationMs: -firstFewPosts.diffNow().as("milliseconds"),
     })) {
+      const { post, comment } = itemToPostOrComment(item);
       mapExists(post, (p) => posts.push(p));
       mapExists(comment, (c) => comments.push(c));
     }
