@@ -1,4 +1,4 @@
-import mapExists from "@xtjs/lib/js/mapExists";
+import mapExists from "@xtjs/lib/mapExists";
 import { DateTime, FixedOffsetZone } from "luxon";
 import { Comment, Post, crawlHn, itemToPostOrComment } from "./main";
 

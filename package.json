@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@wzlin/valid": "^0.4.2",
-    "@xtjs/lib": "^0.53.2"
+    "@xtjs/lib": "^0.57.1"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",

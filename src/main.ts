@@ -9,10 +9,10 @@ import {
   VUnixSecTimestamp,
   Valid,
 } from "@wzlin/valid";
-import assertExists from "@xtjs/lib/js/assertExists";
-import asyncTimeout from "@xtjs/lib/js/asyncTimeout";
-import cryptoRandomInteger from "@xtjs/lib/js/cryptoRandomInteger";
-import raceAsyncIterables from "@xtjs/lib/js/raceAsyncIterables";
+import assertExists from "@xtjs/lib/assertExists";
+import asyncTimeout from "@xtjs/lib/asyncTimeout";
+import cryptoRandomInteger from "@xtjs/lib/cryptoRandomInteger";
+import raceAsyncIterables from "@xtjs/lib/raceAsyncIterables";
 
 // Some items are literally null e.g. https://hacker-news.firebaseio.com/v0/item/0.json.
 // Some items basically omit all properties e.g. https://hacker-news.firebaseio.com/v0/item/78692.json.
